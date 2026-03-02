@@ -1,0 +1,18 @@
+-- 初始迁移示例，实际表结构按业务补充
+-- 使用 migrate 工具执行，禁止手动改表
+
+-- CREATE TABLE IF NOT EXISTS sd_user (
+--   id BIGINT PRIMARY KEY AUTO_INCREMENT,
+--   email VARCHAR(128),
+--   phone VARCHAR(32),
+--   password_hash VARCHAR(255),
+--   nickname VARCHAR(64),
+--   avatar VARCHAR(512),
+--   spark DECIMAL(12,2) DEFAULT 0,
+--   status TINYINT DEFAULT 1,
+--   last_login_at DATETIME,
+--   last_login_ip VARCHAR(64),
+--   device_id VARCHAR(128),
+--   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+--   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
