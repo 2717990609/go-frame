@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"fire-mirage/pkg/logger"
+	"go-backend-framework/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )

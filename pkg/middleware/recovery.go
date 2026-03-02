@@ -4,8 +4,8 @@ package middleware
 import (
 	"net/http"
 
-	"fire-mirage/pkg/logger"
-	"fire-mirage/pkg/response"
+	"go-backend-framework/pkg/logger"
+	"go-backend-framework/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

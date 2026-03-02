@@ -4,7 +4,7 @@ package repository
 import (
 	"context"
 
-	"fire-mirage/internal/model"
+	"go-backend-framework/internal/model"
 
 	"gorm.io/gorm"
 )

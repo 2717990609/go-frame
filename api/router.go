@@ -4,11 +4,11 @@ package api
 import (
 	"time"
 
-	"fire-mirage/config"
-	"fire-mirage/internal/handler"
-	"fire-mirage/internal/service"
-	"fire-mirage/pkg/middleware"
-	"fire-mirage/pkg/response"
+	"go-backend-framework/config"
+	"go-backend-framework/internal/handler"
+	"go-backend-framework/internal/service"
+	"go-backend-framework/pkg/middleware"
+	"go-backend-framework/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"

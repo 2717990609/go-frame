@@ -1,4 +1,4 @@
-module fire-mirage
+module go-backend-framework
 
 go 1.20
 

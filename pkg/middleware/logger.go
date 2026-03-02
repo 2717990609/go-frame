@@ -3,7 +3,7 @@ package middleware
 import (
 	"time"
 
-	"fire-mirage/pkg/logger"
+	"go-backend-framework/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

@@ -1,8 +1,8 @@
 // Package main 入口，仅负责组装与启动（规范 5.1、第九章）
 //
-// @title           Fire Mirage API
-// @version         0.1.0
-// @description     《星火现梦》后端 API - 符合开发规范 v1.8
+// @title           Go Backend Framework API
+// @version         1.0.0
+// @description     通用企业级 Go 后端框架 - 符合开发规范 v2.0
 // @host            localhost:8080
 // @BasePath        /api/v1
 // @securityDefinitions.apikey Bearer
@@ -20,18 +20,18 @@ import (
 	"syscall"
 	"time"
 
-	"fire-mirage/api"
-	"fire-mirage/config"
-	_ "fire-mirage/docs" // 注册 Swagger 文档，供 /swagger/* 使用
-	"fire-mirage/pkg/framework"
-	"fire-mirage/pkg/logger"
+	"go-backend-framework/api"
+	_ "go-backend-framework/docs" // 注册 Swagger 文档，供 /swagger/* 使用
+	"go-backend-framework/config"
+	"go-backend-framework/pkg/framework"
+	"go-backend-framework/pkg/logger"
 
 	"go.uber.org/zap"
 )
 
 var (
 	configPath = flag.String("config", "config/config.dev.yaml", "配置文件路径")
-	version    = "0.1.0"
+	version    = "1.0.0"
 )
 
 func main() {

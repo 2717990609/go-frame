@@ -4,7 +4,7 @@ package service
 import (
 	"context"
 
-	"fire-mirage/internal/dto"
+	"go-backend-framework/internal/dto"
 
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"

@@ -31,13 +31,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/fire-mirage_pkg_response.Response"
+                                    "$ref": "#/definitions/go-backend-framework_pkg_response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/fire-mirage_internal_dto.HealthResponse"
+                                            "$ref": "#/definitions/go-backend-framework_internal_dto.HealthResponse"
                                         }
                                     }
                                 }
@@ -63,13 +63,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/fire-mirage_pkg_response.Response"
+                                    "$ref": "#/definitions/go-backend-framework_pkg_response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/fire-mirage_internal_dto.ReadyResponse"
+                                            "$ref": "#/definitions/go-backend-framework_internal_dto.ReadyResponse"
                                         }
                                     }
                                 }
@@ -81,7 +81,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "fire-mirage_internal_dto.HealthResponse": {
+        "go-backend-framework_internal_dto.HealthResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -92,7 +92,7 @@ const docTemplate = `{
                 }
             }
         },
-        "fire-mirage_internal_dto.ReadyResponse": {
+        "go-backend-framework_internal_dto.ReadyResponse": {
             "type": "object",
             "properties": {
                 "details": {
@@ -112,7 +112,7 @@ const docTemplate = `{
                 }
             }
         },
-        "fire-mirage_pkg_response.Response": {
+        "go-backend-framework_pkg_response.Response": {
             "type": "object",
             "properties": {
                 "code": {

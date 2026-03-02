@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"fire-mirage/config"
-	"fire-mirage/pkg/logger"
-	"fire-mirage/pkg/response"
-	"fire-mirage/pkg/signature"
+	"go-backend-framework/config"
+	"go-backend-framework/pkg/logger"
+	"go-backend-framework/pkg/response"
+	"go-backend-framework/pkg/signature"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"

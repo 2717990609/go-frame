@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"fire-mirage/pkg/response"
+	"go-backend-framework/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

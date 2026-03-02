@@ -2,7 +2,7 @@
 package model
 
 import (
-	"fire-mirage/internal/dto"
+	"go-backend-framework/internal/dto"
 	"time"
 )
 

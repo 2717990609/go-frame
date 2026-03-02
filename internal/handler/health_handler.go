@@ -4,9 +4,9 @@ package handler
 import (
 	"net/http"
 
-	"fire-mirage/internal/dto"
-	"fire-mirage/internal/service"
-	"fire-mirage/pkg/response"
+	"go-backend-framework/internal/dto"
+	"go-backend-framework/internal/service"
+	"go-backend-framework/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

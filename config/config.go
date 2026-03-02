@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"fire-mirage/pkg/logger"
+	"go-backend-framework/pkg/logger"
 
 	"gopkg.in/yaml.v3"
 )
