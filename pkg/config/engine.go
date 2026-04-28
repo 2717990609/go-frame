@@ -24,7 +24,12 @@ func NewEngine() *Engine {
 // Load 从原始数据加载配置
 func (e *Engine) Load(data map[string]interface{}) error {
 	// 环境变量替换
-	e.data = e.expandEnvVars(data)
+	expandedData := e.expandEnvVars(data)
+	if m, ok := expandedData.(map[string]interface{}); ok {
+		e.data = m
+	} else {
+		e.data = make(map[string]interface{})
+	}
 	return nil
 }
 

@@ -2,9 +2,11 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"strings"
-	"time"
+	
+	"gorm.io/gorm"
 )
 
 // MySQLDialect MySQL方言实现
@@ -75,7 +77,7 @@ func (m *MySQLMigrator) CreateTable(ctx context.Context, model any) error {
 
 // DropTable 删除表
 func (m *MySQLMigrator) DropTable(ctx context.Context, model any) error {
-	return m.db.WithContext(ctx).Migrator().DropTable(model).Error
+	return m.db.WithContext(ctx).Migrator().DropTable(model)
 }
 
 // HasTable 检查表是否存在

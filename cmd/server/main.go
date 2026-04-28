@@ -25,6 +25,8 @@ import (
 	"go-backend-framework/config"
 	"go-backend-framework/pkg/framework"
 	"go-backend-framework/pkg/logger"
+	"go-backend-framework/pkg/plugin"
+	"go-backend-framework/pkg/plugin/builtin"
 
 	"go.uber.org/zap"
 )
@@ -55,39 +57,25 @@ func main() {
 	}
 	logger.Global().Info("应用启动", zap.String("version", version))
 
-	// 3. 初始化 DB
-	db, err := framework.NewMySQL(framework.MySQLConfig{
-		Host:         cfg.MySQL.Host,
-		Port:         cfg.MySQL.Port,
-		User:         cfg.MySQL.User,
-		Password:     cfg.MySQL.Password,
-		Database:     cfg.MySQL.Database,
-		Charset:      cfg.MySQL.Charset,
-		Collation:    cfg.MySQL.Collation,
-		MaxOpenConns: cfg.MySQL.MaxOpenConns,
-		MaxIdleConns: cfg.MySQL.MaxIdleConns,
-	})
-	if err != nil {
-		logger.Global().Fatal("连接数据库失败", zap.Error(err))
+	// 3. 以插件形式启动 MySQL、Redis 等基础设施
+	pluginMgr := plugin.NewManager()
+	ctx := context.Background()
+	if err := builtin.LoadBuiltin(ctx, pluginMgr, cfg); err != nil {
+		logger.Global().Fatal("启动内置插件失败", zap.Error(err))
+	}
+	db := framework.GetDB()
+	rdb := framework.GetRedis()
+	if db == nil || rdb == nil {
+		logger.Global().Fatal("MySQL 或 Redis 插件未正确启动")
 	}
 
-	// 4. 初始化 Redis
-	rdb, err := framework.NewRedis(framework.RedisConfig{
-		Addr:     cfg.Redis.Addr,
-		Password: cfg.Redis.Password,
-		DB:       cfg.Redis.DB,
-	})
-	if err != nil {
-		logger.Global().Fatal("连接 Redis 失败", zap.Error(err))
-	}
-
-	// 5. 组装路由
+	// 4. 组装路由
 	engine, err := api.Setup(cfg, db, rdb)
 	if err != nil {
 		logger.Global().Fatal("组装路由失败", zap.Error(err))
 	}
 
-	// 6. 启动 HTTP 服务
+	// 5. 启动 HTTP 服务
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
 		Handler:      engine,
@@ -102,7 +90,7 @@ func main() {
 		}
 	}()
 
-	// 7. 优雅关闭
+	// 6. 优雅关闭
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -115,8 +103,8 @@ func main() {
 		logger.Global().Error("服务关闭异常", zap.Error(err))
 	}
 
-	// 关闭 Redis
-	_ = rdb.Close()
+	// 停止所有插件（含 MySQL、Redis 连接关闭）
+	_ = pluginMgr.Stop(ctx)
 
 	logger.Global().Info("服务已关闭")
 }

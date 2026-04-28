@@ -1,23 +1,33 @@
 # 生产配置禁止提交
 config/config.prod.yaml
 *.local.yaml
+.env
+.env.*
+!.env.example
 
 # 依赖
 vendor/
 
 # 构建
 /bin/
+/dist/
+/build/
 *.exe
+*.out
 
 # 日志
 *.log
 /data/
+/logs/
+/tmp/
 
 # IDE
 .idea/
 .vscode/
 *.swp
+.DS_Store
 
 # 测试
 coverage.out
+.coverage/
 *.test

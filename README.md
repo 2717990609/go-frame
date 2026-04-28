@@ -72,7 +72,8 @@ go-backend-framework/
 4. **安装依赖并运行**
    ```bash
    go mod download
-   go run ./cmd/server -config config/config.dev.yaml
+   go run ./cmd/server/main.go -config config/config.dev.yaml
+
    ```
 
 5. **验证服务**

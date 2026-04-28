@@ -6,9 +6,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-	"time"
-
-	"go-backend-framework/pkg/logger"
 
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
@@ -40,9 +37,7 @@ func NewMySQLProvider(config Config) Provider {
 func (m *MySQLProvider) Connect(ctx context.Context, config Config) error {
 	dsn := m.buildDSN(config)
 	
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.DefaultGormLogger(),
-	})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return fmt.Errorf("连接MySQL失败: %w", err)
 	}
@@ -58,12 +53,6 @@ func (m *MySQLProvider) Connect(ctx context.Context, config Config) error {
 	}
 	if config.MaxIdleConns > 0 {
 		sqlDB.SetMaxIdleConns(config.MaxIdleConns)
-	}
-	if config.ConnMaxLifetime > 0 {
-		sqlDB.SetConnMaxLifetime(config.ConnMaxLifetime)
-	}
-	if config.ConnMaxIdleTime > 0 {
-		sqlDB.SetConnMaxIdleTime(config.ConnMaxIdleTime)
 	}
 	
 	m.db = db

@@ -34,7 +34,7 @@ func Setup(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*gin.Engine, err
 	}
 	r.Use(middleware.Timeout(timeout))
 	// 5. CORS
-	r.Use(middleware.CORS(cfg.CORS))
+	r.Use(middleware.CORS(cfg.CORS.OriginsSlice()))
 
 	// 全局限流（示例：100 req/min）
 	limiter := middleware.NewRateLimiter(100, time.Minute)

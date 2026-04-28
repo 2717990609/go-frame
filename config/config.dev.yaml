@@ -16,7 +16,7 @@ mysql:
   port: "${DB_PORT:3306}"
   user: "${DB_USER:root}"
   password: "${DB_PASSWORD:}"
-  database: "${DB_NAME:app_dev}"        # 开发环境数据库名
+  database: "${DB_NAME:fire_mirage}"        # 开发环境数据库名
   charset: "${DB_CHARSET:utf8mb4}"
   collation: "${DB_COLLATION:utf8mb4_general_ci}"
   max_open_conns: "${DB_MAX_OPEN_CONNS:10}"

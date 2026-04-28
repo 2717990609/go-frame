@@ -6,21 +6,23 @@ import (
 	"time"
 
 	sqldriver "github.com/go-sql-driver/mysql"
+	"go-backend-framework/pkg/database/sqllogger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 // MySQLConfig 简化配置
 type MySQLConfig struct {
-	Host         string
-	Port         int
-	User         string
-	Password     string
-	Database     string
-	Charset      string // 字符集，默认 utf8mb4
-	Collation    string // 排序规则，默认 utf8mb4_general_ci
-	MaxOpenConns int
-	MaxIdleConns int
+	Host          string
+	Port          int
+	User          string
+	Password      string
+	Database      string
+	Charset       string // 字符集，默认 utf8mb4
+	Collation     string // 排序规则，默认 utf8mb4_general_ci
+	MaxOpenConns  int
+	MaxIdleConns  int
+	EnableSQLLog  bool   // 是否打印 SQL 日志（含 trace_id）
 }
 
 // NewMySQL 创建 MySQL 连接
@@ -37,7 +39,11 @@ func NewMySQL(cfg MySQLConfig) (*gorm.DB, error) {
 		Params:               charsetParams(cfg.Charset, cfg.Collation),
 	}
 	dsn := dsnCfg.FormatDSN()
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	gormConfig := &gorm.Config{}
+	if cfg.EnableSQLLog {
+		gormConfig.Logger = sqllogger.New(true)
+	}
+	db, err := gorm.Open(mysql.Open(dsn), gormConfig)
 	if err != nil {
 		return nil, fmt.Errorf("连接 MySQL 失败: %w", err)
 	}

@@ -4,7 +4,9 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	pkgconfig "go-backend-framework/pkg/config"
 	"go-backend-framework/pkg/logger"
 
 	"gopkg.in/yaml.v3"
@@ -18,7 +20,27 @@ type Config struct {
 	Log       logger.Config  `yaml:"log"`
 	JWT       JWTConfig      `yaml:"jwt"`
 	Signature SignatureConfig `yaml:"signature"`
-	CORS      []string       `yaml:"cors"`
+	CORS      CorsConfig     `yaml:"cors"`
+}
+
+// CorsConfig CORS 配置，支持 origins/methods/headers 等
+type CorsConfig struct {
+	Origins     string `yaml:"origins"`
+	Methods     string `yaml:"methods"`
+	Headers     string `yaml:"headers"`
+	Credentials string `yaml:"credentials"`
+}
+
+// OriginsSlice 返回 origins 解析后的 []string，供 middleware.CORS 使用
+func (c CorsConfig) OriginsSlice() []string {
+	if c.Origins == "" {
+		return []string{"*"}
+	}
+	parts := strings.Split(c.Origins, ",")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+	return parts
 }
 
 // SignatureConfig 请求验签配置
@@ -63,30 +85,79 @@ type JWTConfig struct {
 	ExpireHour int    `yaml:"expire_hour"`
 }
 
-// Load 加载配置文件，支持环境变量覆盖
+// Load 加载配置文件，支持 ${VAR:default} 环境变量注入
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("读取配置失败: %w", err)
 	}
-	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
+	// 1. 先解析为 map，保留 ${VAR:default} 为字符串
+	var raw map[string]interface{}
+	if err := yaml.Unmarshal(data, &raw); err != nil {
 		return nil, fmt.Errorf("解析配置失败: %w", err)
 	}
-	// 环境变量覆盖敏感配置
-	if s := os.Getenv("MYSQL_PASSWORD"); s != "" {
-		cfg.MySQL.Password = s
+	// 2. 展开环境变量
+	engine := pkgconfig.NewEngine()
+	if err := engine.Load(raw); err != nil {
+		return nil, fmt.Errorf("加载配置失败: %w", err)
 	}
-	if s := os.Getenv("REDIS_PASSWORD"); s != "" {
-		cfg.Redis.Password = s
+	// 3. 从 Engine 构建 Config（避免二次 unmarshal 类型问题）
+	cfg := buildConfigFromEngine(engine)
+	return cfg, nil
+}
+
+// buildConfigFromEngine 从配置引擎构建 Config 结构
+func buildConfigFromEngine(e *pkgconfig.Engine) *Config {
+	return &Config{
+		Server: ServerConfig{
+			Port:         e.GetInt("server.port", 8080),
+			ReadTimeout:  e.GetInt("server.read_timeout", 30),
+			WriteTimeout: e.GetInt("server.write_timeout", 30),
+			Timeout:      e.GetInt("server.timeout", 30),
+		},
+		MySQL: MySQLConfig{
+			Host:         e.GetString("mysql.host", "localhost"),
+			Port:         e.GetInt("mysql.port", 3306),
+			User:         e.GetString("mysql.user", "root"),
+			Password:     e.GetString("mysql.password", ""),
+			Database:     e.GetString("mysql.database", "default_db"),
+			Charset:      e.GetString("mysql.charset", "utf8mb4"),
+			Collation:    e.GetString("mysql.collation", "utf8mb4_general_ci"),
+			MaxOpenConns: e.GetInt("mysql.max_open_conns", 10),
+			MaxIdleConns: e.GetInt("mysql.max_idle_conns", 5),
+		},
+		Redis: RedisConfig{
+			Addr:     e.GetString("redis.addr", "localhost:6379"),
+			Password: e.GetString("redis.password", ""),
+			DB:       e.GetInt("redis.db", 0),
+		},
+		Log: logger.Config{
+			Output:          e.GetStringSlice("log.output"),
+			FilePath:        e.GetString("log.file_path", ""),
+			MaxSize:         e.GetInt("log.max_size", 100),
+			MaxBackups:      e.GetInt("log.max_backups", 5),
+			MaxAge:          e.GetInt("log.max_age", 7),
+			Compress:        e.GetBool("log.compress", false),
+			EnableSQLLog:    e.GetBool("log.enable_sql_log", false),
+			SensitiveFields: e.GetStringSlice("log.sensitive_fields"),
+		},
+		JWT: JWTConfig{
+			Secret:     e.GetString("jwt.secret", "default-secret"),
+			ExpireHour: e.GetInt("jwt.expire_hour", 168),
+		},
+		Signature: SignatureConfig{
+			Enabled:    e.GetBool("signature.enabled", false),
+			Key:        e.GetString("signature.key", "default-key"),
+			TimeWindow: e.GetInt("signature.time_window", 300),
+			NonceTTL:   e.GetInt("signature.nonce_ttl", 10),
+		},
+		CORS: CorsConfig{
+			Origins:     e.GetString("cors.origins", "*"),
+			Methods:     e.GetString("cors.methods", "*"),
+			Headers:     e.GetString("cors.headers", "*"),
+			Credentials: e.GetString("cors.credentials", "true"),
+		},
 	}
-	if s := os.Getenv("JWT_SECRET"); s != "" {
-		cfg.JWT.Secret = s
-	}
-	if s := os.Getenv("SIGNATURE_KEY"); s != "" {
-		cfg.Signature.Key = s
-	}
-	return &cfg, nil
 }
 
 // Validate 启动时校验必填配置

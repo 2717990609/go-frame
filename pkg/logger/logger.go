@@ -18,7 +18,7 @@ type ctxKey struct{}
 var defaultLogger *zap.Logger
 var traceIDKeyType ctxKey
 
-// Config 日志配置，对应 config/log.yaml
+// Config 日志配置，对应主配置文件中的 log 段（如 config/config.dev.yaml）
 type Config struct {
 	Output          []string `yaml:"output"`
 	FilePath        string   `yaml:"file_path"`

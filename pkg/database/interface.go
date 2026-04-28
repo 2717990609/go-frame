@@ -3,6 +3,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -12,21 +13,21 @@ type Provider interface {
 	Connect(ctx context.Context, config Config) error
 	Close() error
 	Ping(ctx context.Context) error
-	
+
 	// 基础CRUD操作
 	Find(ctx context.Context, dest any, query Query) error
 	FindOne(ctx context.Context, dest any, query Query) error
 	Create(ctx context.Context, model any) error
 	Update(ctx context.Context, model any, updates any) error
 	Delete(ctx context.Context, models ...any) error
-	
+
 	// 事务支持
 	Transaction(ctx context.Context, fn func(ctx context.Context, tx Tx) error) error
-	
+
 	// 原生SQL支持
 	Exec(ctx context.Context, query string, args ...any) (Result, error)
 	Query(ctx context.Context, query string, args ...any) (Rows, error)
-	
+
 	// 特定能力接口
 	Migrator() Migrator
 	Builder() QueryBuilder
@@ -41,11 +42,11 @@ type Tx interface {
 	Create(ctx context.Context, model any) error
 	Update(ctx context.Context, model any, updates any) error
 	Delete(ctx context.Context, models ...any) error
-	
+
 	// 事务操作
 	Commit() error
 	Rollback() error
-	
+
 	// 原生SQL支持
 	Exec(ctx context.Context, query string, args ...any) (Result, error)
 	Query(ctx context.Context, query string, args ...any) (Rows, error)
@@ -53,14 +54,15 @@ type Tx interface {
 
 // Query 查询条件
 type Query struct {
-	Where    Conditions    `json:"where"`
-	Order    []Order       `json:"order"`
-	Limit    *int          `json:"limit"`
-	Offset   *int          `json:"offset"`
-	Joins    []string      `json:"joins"`
-	Select   []string      `json:"select"`
-	GroupBy  []string      `json:"group_by"`
-	Having   Conditions    `json:"having"`
+	Table   string     `json:"table"`   // 表名，SQLx 等非 Gorm 实现需要
+	Where   Conditions `json:"where"`
+	Order   []Order    `json:"order"`
+	Limit   *int       `json:"limit"`
+	Offset  *int       `json:"offset"`
+	Joins   []string   `json:"joins"`
+	Select  []string   `json:"select"`
+	GroupBy []string   `json:"group_by"`
+	Having  Conditions `json:"having"`
 }
 
 // Conditions 查询条件
@@ -75,7 +77,7 @@ type Condition struct {
 
 // Order 排序条件
 type Order struct {
-	Column string `json:"column"`
+	Column    string `json:"column"`
 	Direction string `json:"direction"` // asc, desc
 }
 
@@ -131,20 +133,20 @@ type Dialect interface {
 
 // Config 数据库配置
 type Config struct {
-	Driver      string        `json:"driver"`
-	Host        string        `json:"host"`
-	Port        int           `json:"port"`
-	Database    string        `json:"database"`
-	Username    string        `json:"username"`
-	Password    string        `json:"password"`
-	Charset     string        `json:"charset"`
-	Collation   string        `json:"collation"`
-	MaxOpenConns int          `json:"max_open_conns"`
-	MaxIdleConns int          `json:"max_idle_conns"`
+	Driver          string        `json:"driver"`
+	Host            string        `json:"host"`
+	Port            int           `json:"port"`
+	Database        string        `json:"database"`
+	Username        string        `json:"username"`
+	Password        string        `json:"password"`
+	Charset         string        `json:"charset"`
+	Collation       string        `json:"collation"`
+	MaxOpenConns    int           `json:"max_open_conns"`
+	MaxIdleConns    int           `json:"max_idle_conns"`
 	ConnMaxLifetime time.Duration `json:"conn_max_lifetime"`
 	ConnMaxIdleTime time.Duration `json:"conn_max_idle_time"`
 	// 额外配置参数
-	Params      map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params"`
 }
 
 // Registry 数据库提供者注册表
@@ -161,7 +163,7 @@ func New(config Config) (Provider, error) {
 	if !exists {
 		return nil, ErrUnsupportedDriver
 	}
-	
+
 	provider := factory(config)
 	return provider, nil
 }
@@ -177,8 +179,8 @@ var (
 // 便利方法
 
 // Q 快速构建Query条件
-func Q() *QueryBuilder {
-	return &QueryBuilder{}
+func Q() QueryBuilder {
+	return &MySQLQueryBuilder{}
 }
 
 // Where 构建WHERE条件
