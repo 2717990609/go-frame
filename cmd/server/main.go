@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"go-backend-framework/api"
-	_ "go-backend-framework/docs" // 注册 Swagger 文档，供 /swagger/* 使用
 	"go-backend-framework/config"
+	_ "go-backend-framework/docs" // 注册 Swagger 文档，供 /swagger/* 使用
 	"go-backend-framework/pkg/framework"
 	"go-backend-framework/pkg/logger"
 	"go-backend-framework/pkg/plugin"
@@ -70,15 +70,16 @@ func main() {
 	}
 
 	// 4. 组装路由
-	engine, err := api.Setup(cfg, db, rdb)
+	engine, err := api.Setup(cfg, db, rdb, pluginMgr)
 	if err != nil {
 		logger.Global().Fatal("组装路由失败", zap.Error(err))
 	}
+	handler := pluginMgr.ApplyMiddlewares(engine)
 
 	// 5. 启动 HTTP 服务
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
-		Handler:      engine,
+		Handler:      handler,
 		ReadTimeout:  time.Duration(cfg.Server.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(cfg.Server.WriteTimeout) * time.Second,
 	}

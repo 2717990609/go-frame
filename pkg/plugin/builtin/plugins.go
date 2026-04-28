@@ -3,6 +3,7 @@ package builtin
 
 import (
 	"context"
+	"strings"
 
 	"go-backend-framework/config"
 	"go-backend-framework/pkg/plugin"
@@ -32,7 +33,7 @@ func RegisterBuiltinPlugins(manager plugin.Manager) error {
 	// if err := manager.Register(metricsPlugin); err != nil {
 	//     return err
 	// }
-	
+
 	// tracingPlugin := tracing.NewTracingPlugin()
 	// if err := manager.Register(tracingPlugin); err != nil {
 	//     return err
@@ -64,24 +65,46 @@ func LoadBuiltin(ctx context.Context, manager plugin.Manager, cfg *config.Config
 
 // GetBuiltinPluginConfigs 从应用配置生成内置插件配置
 func GetBuiltinPluginConfigs(cfg *config.Config) map[string]plugin.PluginConfig {
+	enabledSet := map[string]struct{}{}
+	for _, name := range cfg.Plugins.Names {
+		// 兼容 "a,b,c" 和 ["a","b","c"] 两种配置格式
+		for _, part := range strings.Split(name, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			enabledSet[part] = struct{}{}
+		}
+	}
+	isEnabled := func(name string, fallback bool) bool {
+		if len(enabledSet) == 0 {
+			return fallback
+		}
+		_, ok := enabledSet[name]
+		return ok
+	}
+
 	configs := map[string]plugin.PluginConfig{
 		"mysql": {
-			Enabled: true,
+			Enabled:  isEnabled("mysql", true),
+			Critical: true,
 			Config: map[string]interface{}{
-				"host":            cfg.MySQL.Host,
-				"port":            cfg.MySQL.Port,
-				"user":            cfg.MySQL.User,
-				"password":        cfg.MySQL.Password,
-				"database":        cfg.MySQL.Database,
-				"charset":         cfg.MySQL.Charset,
-				"collation":       cfg.MySQL.Collation,
-				"max_open_conns":  cfg.MySQL.MaxOpenConns,
-				"max_idle_conns":  cfg.MySQL.MaxIdleConns,
-				"enable_sql_log":  cfg.Log.EnableSQLLog,
+				"host":           cfg.MySQL.Host,
+				"port":           cfg.MySQL.Port,
+				"user":           cfg.MySQL.User,
+				"password":       cfg.MySQL.Password,
+				"database":       cfg.MySQL.Database,
+				"charset":        cfg.MySQL.Charset,
+				"collation":      cfg.MySQL.Collation,
+				"max_open_conns": cfg.MySQL.MaxOpenConns,
+				"max_idle_conns": cfg.MySQL.MaxIdleConns,
+				"enable_sql_log": cfg.Log.EnableSQLLog,
 			},
 		},
 		"redis": {
-			Enabled: true,
+			Enabled:      isEnabled("redis", true),
+			Critical:     true,
+			Dependencies: []string{"mysql"},
 			Config: map[string]interface{}{
 				"addr":     cfg.Redis.Addr,
 				"password": cfg.Redis.Password,
@@ -89,7 +112,7 @@ func GetBuiltinPluginConfigs(cfg *config.Config) map[string]plugin.PluginConfig 
 			},
 		},
 		"swagger": {
-			Enabled: true,
+			Enabled: isEnabled("swagger", true),
 			Config: map[string]interface{}{
 				"path":        "/swagger",
 				"host":        "localhost:8080",

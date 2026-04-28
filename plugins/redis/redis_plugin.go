@@ -3,13 +3,14 @@ package redis
 
 import (
 	"context"
+	"fmt"
 
 	"go-backend-framework/pkg/framework"
 	"go-backend-framework/pkg/logger"
 	"go-backend-framework/pkg/plugin"
 
-	"go.uber.org/zap"
 	"github.com/go-redis/redis/v8"
+	"go.uber.org/zap"
 )
 
 // Plugin Redis 插件
@@ -49,7 +50,28 @@ func (p *Plugin) Init(ctx context.Context, config map[string]interface{}) error 
 	if v := getInt(config, "db"); v >= 0 {
 		p.config.DB = v
 	}
+	return p.ValidateConfig(config)
+}
+
+// Dependencies 声明依赖
+func (p *Plugin) Dependencies() []string {
+	return []string{"mysql"}
+}
+
+// ValidateConfig 校验关键配置
+func (p *Plugin) ValidateConfig(config map[string]interface{}) error {
+	if p.config.Addr == "" {
+		return fmt.Errorf("redis.addr 不能为空")
+	}
+	if p.config.DB < 0 {
+		return fmt.Errorf("redis.db 必须大于等于 0")
+	}
 	return nil
+}
+
+// Critical 标记为关键插件
+func (p *Plugin) Critical() bool {
+	return true
 }
 
 func getInt(m map[string]interface{}, key string) int {

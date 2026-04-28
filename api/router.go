@@ -8,17 +8,16 @@ import (
 	"go-backend-framework/internal/handler"
 	"go-backend-framework/internal/service"
 	"go-backend-framework/pkg/middleware"
+	"go-backend-framework/pkg/plugin"
 	"go-backend-framework/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 )
 
 // Setup 组装路由与中间件（规范第七章中间件链顺序）
-func Setup(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*gin.Engine, error) {
+func Setup(cfg *config.Config, db *gorm.DB, rdb *redis.Client, pluginMgr plugin.Manager) (*gin.Engine, error) {
 	r := gin.New()
 
 	// 1. Recovery
@@ -50,9 +49,6 @@ func Setup(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*gin.Engine, err
 		c.JSON(200, response.Success(map[string]string{"pong": "ok"}))
 	})
 
-	// Swagger
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
 	// API v1 路由组
 	v1 := r.Group("/api/v1")
 	{
@@ -63,6 +59,10 @@ func Setup(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*gin.Engine, err
 			_ = c.ShouldBindJSON(&body)
 			c.JSON(200, response.Success(body))
 		})
+	}
+
+	if pluginMgr != nil {
+		pluginMgr.ApplyRoutes(r)
 	}
 
 	return r, nil

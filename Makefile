@@ -1,6 +1,6 @@
 # Fire Mirage Makefile
 
-.PHONY: run build swag lint test dev
+.PHONY: run build swag lint test test-short test-plugin ci dev
 
 # 开发环境运行
 run:
@@ -21,6 +21,17 @@ lint:
 # 测试
 test:
 	go test ./...
+
+# 快速测试（跳过重依赖集成场景）
+test-short:
+	go test -short ./...
+
+# 插件模块测试
+test-plugin:
+	go test ./pkg/plugin/...
+
+# CI 本地对齐
+ci: lint test-short test-plugin build
 
 # 开发：启动服务（需本地 MySQL、Redis）
 dev: build

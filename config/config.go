@@ -15,12 +15,19 @@ import (
 // Config 应用总配置
 type Config struct {
 	Server    ServerConfig    `yaml:"server"`
-	MySQL     MySQLConfig    `yaml:"mysql"`
-	Redis     RedisConfig    `yaml:"redis"`
-	Log       logger.Config  `yaml:"log"`
-	JWT       JWTConfig      `yaml:"jwt"`
+	MySQL     MySQLConfig     `yaml:"mysql"`
+	Redis     RedisConfig     `yaml:"redis"`
+	Log       logger.Config   `yaml:"log"`
+	JWT       JWTConfig       `yaml:"jwt"`
 	Signature SignatureConfig `yaml:"signature"`
-	CORS      CorsConfig     `yaml:"cors"`
+	CORS      CorsConfig      `yaml:"cors"`
+	Plugins   PluginsConfig   `yaml:"plugins"`
+}
+
+// PluginsConfig 插件配置
+type PluginsConfig struct {
+	Names   []string                          `yaml:"enabled"`
+	Configs map[string]map[string]interface{} `yaml:",inline"`
 }
 
 // CorsConfig CORS 配置，支持 origins/methods/headers 等
@@ -53,23 +60,23 @@ type SignatureConfig struct {
 
 // ServerConfig HTTP 服务配置
 type ServerConfig struct {
-	Port         int    `yaml:"port"`
-	ReadTimeout  int    `yaml:"read_timeout"`  // 秒
-	WriteTimeout int    `yaml:"write_timeout"` // 秒
-	Timeout      int    `yaml:"timeout"`       // 请求超时秒
+	Port         int `yaml:"port"`
+	ReadTimeout  int `yaml:"read_timeout"`  // 秒
+	WriteTimeout int `yaml:"write_timeout"` // 秒
+	Timeout      int `yaml:"timeout"`       // 请求超时秒
 }
 
 // MySQLConfig 数据库配置
 type MySQLConfig struct {
-	Host            string `yaml:"host"`
-	Port            int    `yaml:"port"`
-	User            string `yaml:"user"`
-	Password        string `yaml:"password"`
-	Database        string `yaml:"database"`
-	Charset         string `yaml:"charset"`    // 字符集，默认 utf8mb4
-	Collation       string `yaml:"collation"`  // 排序规则，默认 utf8mb4_general_ci
-	MaxOpenConns    int    `yaml:"max_open_conns"`
-	MaxIdleConns    int    `yaml:"max_idle_conns"`
+	Host         string `yaml:"host"`
+	Port         int    `yaml:"port"`
+	User         string `yaml:"user"`
+	Password     string `yaml:"password"`
+	Database     string `yaml:"database"`
+	Charset      string `yaml:"charset"`   // 字符集，默认 utf8mb4
+	Collation    string `yaml:"collation"` // 排序规则，默认 utf8mb4_general_ci
+	MaxOpenConns int    `yaml:"max_open_conns"`
+	MaxIdleConns int    `yaml:"max_idle_conns"`
 }
 
 // RedisConfig Redis 配置
@@ -156,6 +163,10 @@ func buildConfigFromEngine(e *pkgconfig.Engine) *Config {
 			Methods:     e.GetString("cors.methods", "*"),
 			Headers:     e.GetString("cors.headers", "*"),
 			Credentials: e.GetString("cors.credentials", "true"),
+		},
+		Plugins: PluginsConfig{
+			Names:   e.GetStringSlice("plugins.enabled"),
+			Configs: map[string]map[string]interface{}{},
 		},
 	}
 }

@@ -3,6 +3,7 @@ package mysql
 
 import (
 	"context"
+	"fmt"
 
 	"go-backend-framework/pkg/framework"
 	"go-backend-framework/pkg/logger"
@@ -21,16 +22,16 @@ type Plugin struct {
 
 // Config MySQL 插件配置
 type Config struct {
-	Host          string `yaml:"host"`
-	Port          int    `yaml:"port"`
-	User          string `yaml:"user"`
-	Password      string `yaml:"password"`
-	Database      string `yaml:"database"`
-	Charset       string `yaml:"charset"`
-	Collation     string `yaml:"collation"`
-	MaxOpenConns  int    `yaml:"max_open_conns"`
-	MaxIdleConns  int    `yaml:"max_idle_conns"`
-	EnableSQLLog  bool   `yaml:"enable_sql_log"`
+	Host         string `yaml:"host"`
+	Port         int    `yaml:"port"`
+	User         string `yaml:"user"`
+	Password     string `yaml:"password"`
+	Database     string `yaml:"database"`
+	Charset      string `yaml:"charset"`
+	Collation    string `yaml:"collation"`
+	MaxOpenConns int    `yaml:"max_open_conns"`
+	MaxIdleConns int    `yaml:"max_idle_conns"`
+	EnableSQLLog bool   `yaml:"enable_sql_log"`
 }
 
 // NewMySQLPlugin 创建 MySQL 插件
@@ -83,7 +84,26 @@ func (p *Plugin) Init(ctx context.Context, config map[string]interface{}) error 
 	if v := getBool(config, "enable_sql_log"); v {
 		p.config.EnableSQLLog = true
 	}
+	return p.ValidateConfig(config)
+}
+
+// ValidateConfig 校验关键配置
+func (p *Plugin) ValidateConfig(config map[string]interface{}) error {
+	if p.config.Host == "" {
+		return fmt.Errorf("mysql.host 不能为空")
+	}
+	if p.config.Port <= 0 {
+		return fmt.Errorf("mysql.port 必须大于 0")
+	}
+	if p.config.Database == "" {
+		return fmt.Errorf("mysql.database 不能为空")
+	}
 	return nil
+}
+
+// Critical 标记为关键插件
+func (p *Plugin) Critical() bool {
+	return true
 }
 
 func getBool(m map[string]interface{}, key string) bool {

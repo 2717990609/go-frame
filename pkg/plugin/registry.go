@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go-backend-framework/pkg/logger"
+
 	"go.uber.org/zap"
 )
 
@@ -31,15 +32,15 @@ func NewRegistry() Registry {
 func (r *registry) Register(plug Plugin) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	name := plug.Name()
 	if _, exists := r.plugins[name]; exists {
 		return fmt.Errorf("插件 %s 已存在", name)
 	}
-	
+
 	r.plugins[name] = plug
-	r.status[name] = PluginStatusDisabled
-	
+	r.status[name] = PluginStatusLoaded
+
 	// 发布注册事件
 	r.events.Publish(Event{
 		Type:      EventPluginRegistered,
@@ -47,12 +48,12 @@ func (r *registry) Register(plug Plugin) error {
 		Message:   "插件注册成功",
 		Timestamp: time.Now().Unix(),
 	})
-	
+
 	logger.Global().Info("插件注册",
 		zap.String("plugin", name),
 		zap.String("version", plug.Version()),
 	)
-	
+
 	return nil
 }
 
@@ -60,14 +61,14 @@ func (r *registry) Register(plug Plugin) error {
 func (r *registry) Unregister(name string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	if _, exists := r.plugins[name]; !exists {
 		return fmt.Errorf("插件 %s 不存在", name)
 	}
-	
+
 	delete(r.plugins, name)
 	delete(r.status, name)
-	
+
 	// 发布注销事件
 	r.events.Publish(Event{
 		Type:      EventPluginUnregistered,
@@ -75,9 +76,9 @@ func (r *registry) Unregister(name string) error {
 		Message:   "插件注销成功",
 		Timestamp: time.Now().Unix(),
 	})
-	
+
 	logger.Global().Info("插件注销", zap.String("plugin", name))
-	
+
 	return nil
 }
 
@@ -85,7 +86,7 @@ func (r *registry) Unregister(name string) error {
 func (r *registry) Get(name string) (Plugin, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	plugin, exists := r.plugins[name]
 	return plugin, exists
 }
@@ -94,12 +95,12 @@ func (r *registry) Get(name string) (Plugin, bool) {
 func (r *registry) List() []Plugin {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	plugins := make([]Plugin, 0, len(r.plugins))
 	for _, plugin := range r.plugins {
 		plugins = append(plugins, plugin)
 	}
-	
+
 	return plugins
 }
 
@@ -107,13 +108,13 @@ func (r *registry) List() []Plugin {
 func (r *registry) Enable(name string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	if _, exists := r.plugins[name]; !exists {
 		return fmt.Errorf("插件 %s 不存在", name)
 	}
-	
+
 	r.status[name] = PluginStatusEnabled
-	
+
 	// 发布启用事件
 	r.events.Publish(Event{
 		Type:      EventPluginEnabled,
@@ -121,9 +122,9 @@ func (r *registry) Enable(name string) error {
 		Message:   "插件启用成功",
 		Timestamp: time.Now().Unix(),
 	})
-	
+
 	logger.Global().Info("插件启用", zap.String("plugin", name))
-	
+
 	return nil
 }
 
@@ -131,13 +132,13 @@ func (r *registry) Enable(name string) error {
 func (r *registry) Disable(name string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	if _, exists := r.plugins[name]; !exists {
 		return fmt.Errorf("插件 %s 不存在", name)
 	}
-	
+
 	r.status[name] = PluginStatusDisabled
-	
+
 	// 发布禁用事件
 	r.events.Publish(Event{
 		Type:      EventPluginDisabled,
@@ -145,9 +146,9 @@ func (r *registry) Disable(name string) error {
 		Message:   "插件禁用成功",
 		Timestamp: time.Now().Unix(),
 	})
-	
+
 	logger.Global().Info("插件禁用", zap.String("plugin", name))
-	
+
 	return nil
 }
 
@@ -155,12 +156,12 @@ func (r *registry) Disable(name string) error {
 func (r *registry) Status(name string) PluginStatus {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	status, exists := r.status[name]
 	if !exists {
 		return PluginStatusUnknown
 	}
-	
+
 	return status
 }
 
@@ -168,7 +169,7 @@ func (r *registry) Status(name string) PluginStatus {
 func (r *registry) setStatus(name string, status PluginStatus) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	r.status[name] = status
 }
 
@@ -176,20 +177,30 @@ func (r *registry) setStatus(name string, status PluginStatus) {
 func (r *registry) ListByStatus(status PluginStatus) []Plugin {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	plugins := make([]Plugin, 0)
 	for name, plugin := range r.plugins {
 		if r.status[name] == status {
 			plugins = append(plugins, plugin)
 		}
 	}
-	
+
 	return plugins
 }
 
 // EnabledPlugins 获取已启用的插件
 func (r *registry) EnabledPlugins() []Plugin {
-	return r.ListByStatus(PluginStatusEnabled)
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	plugins := make([]Plugin, 0)
+	for name, plugin := range r.plugins {
+		switch r.status[name] {
+		case PluginStatusEnabled, PluginStatusInitialized, PluginStatusStarting, PluginStatusRunning:
+			plugins = append(plugins, plugin)
+		}
+	}
+	return plugins
 }
 
 // DisabledPlugins 获取已禁用的插件
@@ -201,7 +212,7 @@ func (r *registry) DisabledPlugins() []Plugin {
 func (r *registry) Count() int {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	return len(r.plugins)
 }
 
@@ -209,7 +220,7 @@ func (r *registry) Count() int {
 func (r *registry) Exists(name string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	_, exists := r.plugins[name]
 	return exists
 }
@@ -218,20 +229,20 @@ func (r *registry) Exists(name string) bool {
 func (r *registry) GetMetadata(name string) (*PluginMetadata, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	plugin, exists := r.plugins[name]
 	if !exists {
 		return nil, fmt.Errorf("插件 %s 不存在", name)
 	}
-	
+
 	return &PluginMetadata{
-		Name:        plugin.Name(),
-		Version:     plugin.Version(),
-		Description: plugin.Description(),
-		Author:      plugin.Author(),
-		Tags:        []string{}, // 需要从插件中获取
-		Dependencies: []string{}, // 需要从插件中获取
-		Config:      map[string]interface{}{}, // 需要从插件中获取
+		Name:         plugin.Name(),
+		Version:      plugin.Version(),
+		Description:  plugin.Description(),
+		Author:       plugin.Author(),
+		Tags:         []string{},               // 需要从插件中获取
+		Dependencies: []string{},               // 需要从插件中获取
+		Config:       map[string]interface{}{}, // 需要从插件中获取
 	}, nil
 }
 
@@ -240,7 +251,7 @@ func (r *registry) UpdateStatus(name string, status PluginStatus) error {
 	if !r.Exists(name) {
 		return fmt.Errorf("插件 %s 不存在", name)
 	}
-	
+
 	r.setStatus(name, status)
 	return nil
 }

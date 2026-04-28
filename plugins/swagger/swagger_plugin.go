@@ -5,8 +5,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"go-backend-framework/pkg/plugin"
+
+	swaggerFiles "github.com/swaggo/files"
 )
 
 // SwaggerPlugin Swagger插件
@@ -17,12 +20,12 @@ type SwaggerPlugin struct {
 
 // Config Swagger插件配置
 type Config struct {
-	Enabled bool   `yaml:"enabled"`
-	Path    string `yaml:"path"`
-	Host    string `yaml:"host"`
-	Title   string `yaml:"title"`
+	Enabled     bool   `yaml:"enabled"`
+	Path        string `yaml:"path"`
+	Host        string `yaml:"host"`
+	Title       string `yaml:"title"`
 	Description string `yaml:"description"`
-	Version string `yaml:"version"`
+	Version     string `yaml:"version"`
 }
 
 // NewSwaggerPlugin 创建Swagger插件
@@ -30,12 +33,12 @@ func NewSwaggerPlugin() *SwaggerPlugin {
 	return &SwaggerPlugin{
 		BasePlugin: *plugin.NewBasePlugin("swagger", "1.0.0", "Swagger API文档插件", "Framework Team"),
 		config: Config{
-			Enabled: true,
-			Path:    "/swagger",
-			Host:    "localhost:8080",
-			Title:   "API文档",
+			Enabled:     true,
+			Path:        "/swagger",
+			Host:        "localhost:8080",
+			Title:       "API文档",
 			Description: "Auto generated API documentation",
-			Version: "1.0.0",
+			Version:     "1.0.0",
 		},
 	}
 }
@@ -61,8 +64,8 @@ func (p *SwaggerPlugin) Init(ctx context.Context, config map[string]interface{})
 	if version, ok := config["version"].(string); ok {
 		p.config.Version = version
 	}
-	
-	return nil
+
+	return p.ValidateConfig(config)
 }
 
 // Name 获取插件名称
@@ -90,7 +93,7 @@ func (p *SwaggerPlugin) Start(ctx context.Context) error {
 	if !p.config.Enabled {
 		return nil
 	}
-	
+
 	// 这里可以添加Swagger初始化逻辑
 	return nil
 }
@@ -105,16 +108,27 @@ func (p *SwaggerPlugin) Routes() []plugin.Route {
 	if !p.config.Enabled {
 		return []plugin.Route{}
 	}
-	
+
 	return []plugin.Route{
 		{
-			Method:   "GET",
-			Path:     fmt.Sprintf("%s/*any", p.config.Path),
-			Handler:  p.swaggerHandler(),
+			Method:      "GET",
+			Path:        fmt.Sprintf("%s/*any", p.config.Path),
+			Handler:     p.swaggerHandler(),
 			Description: "Swagger UI文档",
-			Tags:     []string{"docs"},
+			Tags:        []string{"docs"},
 		},
 	}
+}
+
+// ValidateConfig 校验配置
+func (p *SwaggerPlugin) ValidateConfig(config map[string]interface{}) error {
+	if p.config.Path == "" {
+		return fmt.Errorf("swagger.path 不能为空")
+	}
+	if !strings.HasPrefix(p.config.Path, "/") {
+		return fmt.Errorf("swagger.path 必须以 / 开头")
+	}
+	return nil
 }
 
 // Middlewares 获取中间件
@@ -129,28 +143,8 @@ func (p *SwaggerPlugin) Hooks() []plugin.Hook {
 
 // swaggerHandler Swagger处理器
 func (p *SwaggerPlugin) swaggerHandler() http.HandlerFunc {
-	// 使用gin的Swagger处理器
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 设置CORS头
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		
-		// 这里应该调用实际的Swagger处理器
-		// 简化实现，返回基本信息
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{
-			"swagger": "2.0",
-			"info": {
-				"title": "%s",
-				"description": "%s",
-				"version": "%s"
-			},
-			"host": "%s",
-			"basePath": "/",
-			"paths": {}
-		}`, p.config.Title, p.config.Description, p.config.Version, p.config.Host)
+		swaggerFiles.Handler.ServeHTTP(w, r)
 	}
 }
 

@@ -25,7 +25,7 @@ mysql:
 # Redis配置
 redis:
   addr: "${REDIS_ADDR:127.0.0.1:6379}"
-  password: "${REDIS_PASSWORD:}"
+  password: "${REDIS_PASSWORD:123456}"
   db: "${REDIS_DB:0}"
 
 # 日志配置
@@ -92,7 +92,7 @@ monitoring:
 
 # 插件配置
 plugins:
-  enabled: "${PLUGINS_ENABLED:swagger}"
+  enabled: "${PLUGINS_ENABLED:mysql,redis,swagger}"
   swagger:
     enabled: "${SWAGGER_ENABLED:true}"
     path: "${SWAGGER_PATH:/swagger}"

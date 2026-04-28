@@ -48,7 +48,7 @@ func TestE2E_ServerStartAndHealth(t *testing.T) {
 	defer pluginMgr.Stop(ctx)
 
 	// 4. 组装路由
-	engine, err := api.Setup(cfg, db, rdb)
+	engine, err := api.Setup(cfg, db, rdb, pluginMgr)
 	if err != nil {
 		t.Fatalf("api setup: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestE2E_RealHTTP(t *testing.T) {
 	if db == nil || rdb == nil {
 		t.Skip("DB/Redis not available")
 	}
-	engine, err := api.Setup(cfg, db, rdb)
+	engine, err := api.Setup(cfg, db, rdb, pluginMgr)
 	if err != nil {
 		t.Fatalf("api setup: %v", err)
 	}
